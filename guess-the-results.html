@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guess the Results — Ramadan Dietary Patterns in Kuwait</title>
+<meta name="description" content="An interactive data guessing game about what 406 people in Kuwait ate during Ramadan 1447. Guess the numbers, compare the groups, and find out what's real.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== CSS RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f2eb;
+  --card: #ffffff;
+  --accent: #2d7a52;
+  --accent-hover: #3ea36e;
+  --text: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --slider-track: #d9d4c7;
+  --toggle-selected-bg: #2d7a52;
+  --toggle-selected-text: #ffffff;
+  --toggle-unselected-bg: #edeae3;
+  --toggle-unselected-text: #1a1a1a;
+  --verdict-bg: #eaf4ee;
+  --shadow: 0 4px 32px rgba(0,0,0,0.08);
+  --shadow-hover: 0 8px 40px rgba(0,0,0,0.12);
+  --border-subtle: rgba(0,0,0,0.04);
+  --slider-thumb-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  --correct-color: #2d7a52;
+  --wrong-color: #c0392b;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+[data-theme="dark"] {
+  --bg: #0f0f0f;
+  --card: #1a1a1a;
+  --accent: #5cba87;
+  --accent-hover: #6fd49c;
+  --text: #f0f0f0;
+  --text-muted: #888888;
+  --slider-track: #333333;
+  --toggle-selected-bg: #5cba87;
+  --toggle-selected-text: #0f0f0f;
+  --toggle-unselected-bg: #2a2a2a;
+  --toggle-unselected-text: #f0f0f0;
+  --verdict-bg: #1a2e22;
+  --shadow: 0 4px 32px rgba(0,0,0,0.3);
+  --shadow-hover: 0 8px 40px rgba(0,0,0,0.4);
+  --border-subtle: rgba(255,255,255,0.06);
+  --slider-thumb-shadow: 0 1px 6px rgba(0,0,0,0.4);
+  --correct-color: #5cba87;
+  --wrong-color: #e74c3c;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+/* ===== THEME TOGGLE ===== */
+#theme-toggle {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 1000;
+  background: var(--card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: background-color 0.3s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+#theme-toggle:hover {
+  box-shadow: var(--shadow-hover);
+  transform: scale(1.08);
+}
+#theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+#theme-toggle .icon-sun, #theme-toggle .icon-moon { display: none; }
+[data-theme="light"] #theme-toggle .icon-moon { display: block; }
+[data-theme="dark"] #theme-toggle .icon-sun { display: block; }
+
+/* ===== GAME CONTAINER ===== */
+#game-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem auto;
+  position: relative;
+  min-height: 400px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  box-shadow: var(--shadow);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--border-subtle);
+}
+
+/* ===== SCREEN SYSTEM ===== */
+.screen {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+  position: relative;
+}
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--slider-track);
+  border-radius: 3px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ===== TYPOGRAPHY ===== */
+.screen-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+.screen-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+.screen-body {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  margin-bottom: 1.75rem;
+}
+.screen-body em {
+  font-style: normal;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.question-prompt {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1.75rem;
+  line-height: 1.5;
+}
+
+/* ===== PRIMARY BUTTON ===== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 0.85rem 2rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(45,122,82,0.2);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(45,122,82,0.3);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-next {
+  margin-top: 1.5rem;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.3s ease 0.2s, transform 0.3s ease 0.2s;
+}
+.btn-next.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== SLIDER COMPONENT ===== */
+.slider-group {
+  margin-bottom: 1.5rem;
+}
+.slider-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.slider-wrapper {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+.slider-track-bg {
+  position: absolute;
+  width: 100%;
+  height: 6px;
+  background: var(--slider-track);
+  border-radius: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  overflow: visible;
+  transition: background-color 0.3s ease;
+}
+.slider-track-fill {
+  position: absolute;
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 6px;
+  transition: none;
+}
+.slider-track-fill.animate {
+  transition: width 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.slider-track-fill.answer-fill {
+  background: var(--accent);
+  left: 0;
+}
+
+.guess-marker {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 20px;
+  background: var(--text);
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  z-index: 5;
+  transition: opacity 0.3s ease;
+}
+.guess-marker.visible {
+  opacity: 0.6;
+  animation: pulse-marker 0.5s ease;
+}
+@keyframes pulse-marker {
+  0% { transform: translate(-50%, -50%) scaleY(0.5); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scaleY(1.3); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scaleY(1); opacity: 0.6; }
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 48px;
+  background: transparent;
+  position: relative;
+  z-index: 3;
+  cursor: pointer;
+  margin: 0;
+}
+input[type="range"]:focus-visible {
+  outline: none;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  border-radius: 6px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--accent);
+  box-shadow: var(--slider-thumb-shadow);
+  margin-top: -9px;
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(45,122,82,0.3);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(45,122,82,0.25), var(--slider-thumb-shadow);
+}
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  border-radius: 6px;
+  border: none;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--accent);
+  box-shadow: var(--slider-thumb-shadow);
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="range"]:disabled {
+  cursor: default;
+  opacity: 0.9;
+}
+input[type="range"]:disabled::-webkit-slider-thumb {
+  cursor: default;
+  transform: none;
+  border-color: var(--text-muted);
+  opacity: 0.5;
+}
+input[type="range"]:disabled::-moz-range-thumb {
+  cursor: default;
+  border-color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.slider-readout {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+  min-height: 2rem;
+  tabular-nums: true;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== REVEAL BLOCK ===== */
+.reveal-block {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.4s ease, max-height 0.5s ease;
+}
+.reveal-block.visible {
+  opacity: 1;
+  max-height: 500px;
+}
+.reveal-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-body);
+  line-height: 1.2;
+}
+.reveal-copy {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+/* ===== PAIRED SLIDERS (TYPE B) ===== */
+.paired-sliders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+@media (max-width: 540px) {
+  .paired-sliders { grid-template-columns: 1fr; gap: 1rem; }
+}
+.paired-slider-col .reveal-number { font-size: 2rem; }
+.paired-slider-col .reveal-copy { font-size: 0.88rem; }
+
+.insight-line {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--verdict-bg);
+  border-radius: 10px;
+  border-left: 3px solid var(--accent);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.insight-line.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== TOGGLE BUTTONS (TYPE C) ===== */
+.toggle-group {
+  display: flex;
+  gap: 0;
+  margin: 1.25rem 0;
+  border-radius: 50px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  width: fit-content;
+}
+.toggle-btn {
+  padding: 0.65rem 1.25rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  background: var(--toggle-unselected-bg);
+  color: var(--toggle-unselected-text);
+  white-space: nowrap;
+}
+.toggle-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.toggle-btn.selected {
+  background: var(--toggle-selected-bg);
+  color: var(--toggle-selected-text);
+}
+.toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ===== VERDICT BANNER (TYPE C) ===== */
+.verdict-banner {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--verdict-bg);
+  border-radius: 12px;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.4s ease, max-height 0.6s ease, transform 0.4s ease;
+  transform: translateY(8px);
+}
+.verdict-banner.visible {
+  opacity: 1;
+  max-height: 400px;
+  transform: translateY(0);
+}
+.verdict-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+.verdict-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.verdict-icon.correct {
+  background: var(--correct-color);
+  color: #fff;
+}
+.verdict-icon.wrong {
+  background: var(--wrong-color);
+  color: #fff;
+}
+.verdict-call-result {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.verdict-call-result.correct { color: var(--correct-color); }
+.verdict-call-result.wrong { color: var(--wrong-color); }
+.verdict-pvalue {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+.verdict-copy {
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* ===== INTRO / TITLE SCREENS ===== */
+.intro-text {
+  font-size: 1.08rem;
+  line-height: 1.75;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+.intro-text:last-of-type {
+  margin-bottom: 2rem;
+}
+.intro-emphasis {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.title-round {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.title-heading {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 1rem;
+  line-height: 1.25;
+}
+.title-body {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+/* ===== FINAL SCREEN ===== */
+.final-text {
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: var(--text);
+  margin-bottom: 1.25rem;
+}
+.final-text:last-of-type {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.final-divider {
+  width: 40px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 3px;
+  margin: 1.5rem 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  body { padding: 1rem 0.75rem; }
+  .card { padding: 1.75rem 1.25rem; border-radius: 14px; }
+  .screen-title { font-size: 1.25rem; }
+  .question-prompt { font-size: 1.05rem; }
+  .reveal-number { font-size: 2.5rem; }
+  .title-heading { font-size: 1.4rem; }
+  .slider-readout { font-size: 1.3rem; }
+  .toggle-btn { padding: 0.55rem 0.9rem; font-size: 0.82rem; }
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in {
+  animation: fadeInUp 0.4s ease forwards;
+}
+</style>
+</head>
+<body>
+
+<!-- Theme Toggle -->
+<button id="theme-toggle" aria-label="Toggle dark mode">
+  <span class="icon-moon">🌙</span>
+  <span class="icon-sun">☀️</span>
+</button>
+
+<div id="game-container"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ===== THEME =====
+  const toggle = document.getElementById('theme-toggle');
+  toggle.addEventListener('click', () => {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', next);
+  });
+
+  // ===== DATA =====
+  const part1Questions = [
+    {
+      type: 'A',
+      prompt: 'What percentage of people skipped Suhoor entirely?',
+      answer: 30.2,
+      revealCopy: '30.2% — nearly 1 in 3 people skipped Suhoor altogether. The one meal built to fuel an entire day of fasting, and a third of Kuwait just\u2026 didn\'t show up for it.'
+    },
+    {
+      type: 'A',
+      prompt: 'What percentage of people ate carbs (grains or bread) at Iftar?',
+      answer: 93.1,
+      revealCopy: '93.1%. Basically everyone. If there\'s one thing uniting Kuwait at the Iftar table, it\'s bread and rice.'
+    },
+    {
+      type: 'A',
+      prompt: 'What percentage of people had something sweet at Iftar?',
+      answer: 77.3,
+      revealCopy: '77.3% of people had something sweet on the day they reported. Sugar showed up on the plate almost as often as bread and rice did.'
+    },
+    {
+      type: 'A',
+      prompt: 'What percentage drank the recommended 7\u20138+ cups of water between Iftar and Fajr?',
+      answer: 20.4,
+      revealCopy: 'Only 20.4%. That means 1 in 5 people hit the recommended water intake. After 10+ hours with zero food or drink, most people still finished the night without catching up.'
+    },
+    {
+      type: 'A',
+      prompt: 'What percentage drank coffee at some point between Iftar and Suhoor?',
+      answer: 59.3,
+      revealCopy: '59.3%. Almost 6 in 10 people had coffee right when hydration was already the weak spot. Caffeine and dehydration, working together against you.'
+    },
+    {
+      type: 'B',
+      prompt: 'What percentage included vegetables at each meal?',
+      labelA: 'At Suhoor',
+      labelB: 'At Iftar',
+      answerA: 48,
+      answerB: 70.1,
+      revealA: '48% — less than half the people who had Suhoor put vegetables on the plate.',
+      revealB: '70.1% — that number jumps sharply once Iftar comes around.',
+      insight: 'A 22-point jump. Vegetables are an afterthought at Suhoor but a priority at Iftar — even though Suhoor is the meal that has to carry you through the day.'
+    },
+    {
+      type: 'B',
+      prompt: 'What percentage included fruit at each meal?',
+      labelA: 'At Suhoor',
+      labelB: 'At Iftar',
+      answerA: 30,
+      answerB: 39.6,
+      revealA: '30% — only 3 in 10 people who had Suhoor included fruit.',
+      revealB: '39.6% — a modest uptick at Iftar, but still low.',
+      insight: 'Fruit stays low at both meals. People were missing out on fiber and hydration from natural sources at the exact moments they needed it most.'
+    }
+  ];
+
+  const part2Questions = [
+    {
+      labelA: 'Ages 18\u201324',
+      labelB: 'Ages 25 and older',
+      answerA: 53.2,
+      answerB: 40.8,
+      correctCall: 'real',
+      pValue: '0.015',
+      prompt: 'What percentage ate ultra-processed food at Iftar — by age group?',
+      verdict: 'Real difference. 18\u201324 year-olds reach for ultra-processed food noticeably more than the 25+ group, and with p\u2009=\u20090.015, this gap is unlikely to be random chance.'
+    },
+    {
+      labelA: 'Ages 18\u201324',
+      labelB: 'Ages 25 and older',
+      answerA: 18.9,
+      answerB: 10.8,
+      correctCall: 'real',
+      pValue: '0.033',
+      prompt: 'What percentage ate processed meat at Iftar — by age group?',
+      verdict: 'Real difference — same pattern as the last one. Younger participants ate more processed meat at Iftar, and p\u2009=\u20090.033 says this difference is real.'
+    },
+    {
+      labelA: 'Ages 18\u201324',
+      labelB: 'Ages 25 and older',
+      answerA: 23.5,
+      answerB: 32.6,
+      correctCall: 'real',
+      pValue: '0.046',
+      prompt: 'What percentage drank black tea between Iftar and Suhoor — by age group?',
+      verdict: 'Real difference — but flipped. This time it\'s the 25+ group drinking more. At p\u2009=\u20090.046 it just barely clears the line, but it\'s real: not every age gap points the same direction.'
+    },
+    {
+      labelA: 'Women',
+      labelB: 'Men',
+      answerA: 80.8,
+      answerB: 63.8,
+      correctCall: 'real',
+      pValue: '0.001',
+      prompt: 'What percentage had something sweet at Iftar — by gender?',
+      verdict: 'Real difference — and the strongest result in the whole dataset. Women reported sweets intake 17 points higher than men, at p\u2009=\u20090.001 — about as close to certain as this kind of data gets.'
+    },
+    {
+      labelA: 'Ages 18\u201324',
+      labelB: 'Ages 25 and older',
+      answerA: 19.6,
+      answerB: 21.7,
+      correctCall: 'noise',
+      pValue: '0.617',
+      prompt: 'What percentage drank 7\u20138+ cups of water — by age group?',
+      verdict: 'Just noise. Both age groups hover around 20%, and a 2-point gap at p\u2009=\u20090.617 is well within normal variation — age doesn\'t predict who stays hydrated.'
+    },
+    {
+      labelA: 'Women',
+      labelB: 'Men',
+      answerA: 61.3,
+      answerB: 51.8,
+      correctCall: 'noise',
+      pValue: '0.116',
+      prompt: 'What percentage drank coffee between Iftar and Suhoor — by gender?',
+      verdict: 'Just noise — and this one\'s the lesson. The gap here is actually bigger than the ultra-processed-food-by-age gap that was significant. Gap size alone doesn\'t tell you if something\'s real. p\u2009=\u20090.116 means we can\'t rule out chance.'
+    }
+  ];
+
+  // ===== SCREEN MANAGEMENT =====
+  const container = document.getElementById('game-container');
+  let currentScreenEl = null;
+
+  function showScreen(html) {
+    const newScreen = document.createElement('div');
+    newScreen.className = 'screen';
+    newScreen.innerHTML = '<div class="card">' + html + '</div>';
+    container.appendChild(newScreen);
+
+    if (currentScreenEl) {
+      currentScreenEl.classList.remove('active');
+      const old = currentScreenEl;
+      setTimeout(() => { if (old.parentNode) old.parentNode.removeChild(old); }, 400);
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        newScreen.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+    currentScreenEl = newScreen;
+  }
+
+  // ===== UTILITY: Animate number counting up =====
+  function animateNumber(el, target, duration) {
+    const start = performance.now();
+    const isDecimal = String(target).includes('.');
+    function tick(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = eased * target;
+      el.textContent = isDecimal ? current.toFixed(1) + '%' : Math.round(current) + '%';
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ===== BUILD SLIDER HTML =====
+  function buildSliderHTML(id, label, showLabel) {
+    let labelHtml = '';
+    if (showLabel && label) {
+      labelHtml = '<div class="slider-label">' + label + '</div>';
+    }
+    return '' +
+      '<div class="slider-group" id="group-' + id + '">' +
+        labelHtml +
+        '<div class="slider-readout" id="readout-' + id + '">50%</div>' +
+        '<div class="slider-wrapper">' +
+          '<div class="slider-track-bg">' +
+            '<div class="slider-track-fill" id="fill-' + id + '"></div>' +
+            '<div class="guess-marker" id="marker-' + id + '"></div>' +
+          '</div>' +
+          '<input type="range" id="slider-' + id + '" min="0" max="100" value="50" step="0.1" aria-label="' + (label || 'Guess percentage') + '">' +
+        '</div>' +
+        '<div class="reveal-block" id="reveal-' + id + '">' +
+          '<div class="reveal-number" id="revnum-' + id + '"></div>' +
+          '<div class="reveal-copy" id="revcopy-' + id + '"></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function bindSlider(id) {
+    const slider = document.getElementById('slider-' + id);
+    const readout = document.getElementById('readout-' + id);
+    const fill = document.getElementById('fill-' + id);
+    if (!slider) return;
+    function update() {
+      const val = parseFloat(slider.value);
+      readout.textContent = val.toFixed(val % 1 === 0 ? 0 : 1) + '%';
+      fill.style.width = val + '%';
+    }
+    slider.addEventListener('input', update);
+    update();
+  }
+
+  function revealSlider(id, answer, copyText) {
+    const slider = document.getElementById('slider-' + id);
+    const fill = document.getElementById('fill-' + id);
+    const marker = document.getElementById('marker-' + id);
+    const reveal = document.getElementById('reveal-' + id);
+    const revNum = document.getElementById('revnum-' + id);
+    const revCopy = document.getElementById('revcopy-' + id);
+    const readout = document.getElementById('readout-' + id);
+
+    const guessVal = parseFloat(slider.value);
+    slider.disabled = true;
+
+    // reset fill for answer animation
+    fill.style.width = '0%';
+    fill.classList.add('answer-fill');
+    // Force reflow
+    fill.offsetHeight;
+    fill.classList.add('animate');
+    fill.style.width = answer + '%';
+
+    // Place guess marker
+    marker.style.left = guessVal + '%';
+    setTimeout(() => { marker.classList.add('visible'); }, 300);
+
+    // Animate readout to answer
+    readout.style.color = 'var(--accent)';
+    animateNumber(readout, answer, 700);
+
+    // Show reveal block after slider animation
+    if (reveal) {
+      setTimeout(() => {
+        animateNumber(revNum, answer, 500);
+        if (revCopy) revCopy.textContent = copyText || '';
+        reveal.classList.add('visible');
+      }, 500);
+    }
+  }
+
+  // ===== SCREENS =====
+
+  // --- INTRO ---
+  function showIntro() {
+    const html = '' +
+      '<p class="intro-text">406 people across Kuwait told us exactly what they ate this Ramadan — every bite at Iftar, every skipped Suhoor, every extra cup of coffee at midnight. Some of what they told us will surprise you.</p>' +
+      '<p class="intro-text">Think you know how Kuwait eats during the holy month? <span class="intro-emphasis">Let\'s find out.</span></p>' +
+      '<button class="btn-primary" id="btn-start">Let\'s go <span style="font-size:1.1em">→</span></button>';
+    showScreen(html);
+    document.getElementById('btn-start').addEventListener('click', showPart1Title);
+  }
+
+  // --- PART 1 TITLE ---
+  function showPart1Title() {
+    const html = '' +
+      '<div class="title-round">Round 1</div>' +
+      '<div class="title-heading">Guess the number</div>' +
+      '<p class="title-body">Eight real numbers, straight from our survey of 406 people. Slide to where you think the truth lands, then check — no points, no pressure, just the real number and whether you called it.</p>' +
+      '<button class="btn-primary" id="btn-start-p1">Start <span style="font-size:1.1em">→</span></button>';
+    showScreen(html);
+    document.getElementById('btn-start-p1').addEventListener('click', () => showPart1Question(0));
+  }
+
+  // --- PART 1 QUESTIONS ---
+  function showPart1Question(index) {
+    if (index >= part1Questions.length) {
+      showPart2Title();
+      return;
+    }
+    const q = part1Questions[index];
+    const total = part1Questions.length;
+    const progressPct = ((index) / total * 100).toFixed(1);
+
+    if (q.type === 'A') {
+      showTypeA(q, index, total, progressPct);
+    } else {
+      showTypeB(q, index, total, progressPct);
+    }
+  }
+
+  // --- TYPE A ---
+  function showTypeA(q, index, total, progressPct) {
+    const sid = 'p1-' + index;
+    const html = '' +
+      '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div>' +
+      '<div class="screen-label">Question ' + (index + 1) + ' of ' + total + '</div>' +
+      '<div class="question-prompt">' + q.prompt + '</div>' +
+      buildSliderHTML(sid, null, false) +
+      '<button class="btn-primary" id="btn-check-' + sid + '">Check answer</button>' +
+      '<button class="btn-primary btn-next" id="btn-next-' + sid + '">Next <span style="font-size:1.1em">→</span></button>';
+    showScreen(html);
+    bindSlider(sid);
+
+    document.getElementById('btn-check-' + sid).addEventListener('click', function() {
+      this.style.display = 'none';
+      revealSlider(sid, q.answer, q.revealCopy);
+      setTimeout(() => {
+        document.getElementById('btn-next-' + sid).classList.add('visible');
+      }, 900);
+    });
+    document.getElementById('btn-next-' + sid).addEventListener('click', () => showPart1Question(index + 1));
+
+    // animate progress bar in
+    setTimeout(() => {
+      const fill = currentScreenEl.querySelector('.progress-bar-fill');
+      if (fill) fill.style.width = ((index + 1) / total * 100).toFixed(1) + '%';
+    }, 50);
+  }
+
+  // --- TYPE B ---
+  function showTypeB(q, index, total, progressPct) {
+    const sidA = 'p1-' + index + '-a';
+    const sidB = 'p1-' + index + '-b';
+    const html = '' +
+      '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div>' +
+      '<div class="screen-label">Question ' + (index + 1) + ' of ' + total + '</div>' +
+      '<div class="question-prompt">' + q.prompt + '</div>' +
+      '<div class="paired-sliders">' +
+        '<div class="paired-slider-col">' + buildSliderHTML(sidA, q.labelA, true) + '</div>' +
+        '<div class="paired-slider-col">' + buildSliderHTML(sidB, q.labelB, true) + '</div>' +
+      '</div>' +
+      '<div class="insight-line" id="insight-' + index + '">' + q.insight + '</div>' +
+      '<button class="btn-primary" id="btn-check-' + index + '">Check answer</button>' +
+      '<button class="btn-primary btn-next" id="btn-next-' + index + '">Next <span style="font-size:1.1em">→</span></button>';
+    showScreen(html);
+    bindSlider(sidA);
+    bindSlider(sidB);
+
+    document.getElementById('btn-check-' + index).addEventListener('click', function() {
+      this.style.display = 'none';
+      revealSlider(sidA, q.answerA, q.revealA);
+      revealSlider(sidB, q.answerB, q.revealB);
+      setTimeout(() => {
+        document.getElementById('insight-' + index).classList.add('visible');
+      }, 900);
+      setTimeout(() => {
+        document.getElementById('btn-next-' + index).classList.add('visible');
+      }, 1200);
+    });
+    document.getElementById('btn-next-' + index).addEventListener('click', () => showPart1Question(index + 1));
+
+    setTimeout(() => {
+      const fill = currentScreenEl.querySelector('.progress-bar-fill');
+      if (fill) fill.style.width = ((index + 1) / total * 100).toFixed(1) + '%';
+    }, 50);
+  }
+
+  // --- PART 2 TITLE ---
+  function showPart2Title() {
+    const html = '' +
+      '<div class="title-round">Round 2</div>' +
+      '<div class="title-heading">Compare & call it</div>' +
+      '<p class="title-body">It\'s not just what people ate — it\'s <em>who</em>. We ran the numbers by age and by gender to find where real differences show up, and where a gap that looks real turns out to be statistical noise.</p>' +
+      '<p class="title-body">For each one: guess both groups, then make the call. Significant, or not?</p>' +
+      '<button class="btn-primary" id="btn-start-p2">Let\'s go <span style="font-size:1.1em">→</span></button>';
+    showScreen(html);
+    document.getElementById('btn-start-p2').addEventListener('click', () => showPart2Question(0));
+  }
+
+  // --- PART 2 QUESTIONS (TYPE C) ---
+  function showPart2Question(index) {
+    if (index >= part2Questions.length) {
+      showFinal();
+      return;
+    }
+    const q = part2Questions[index];
+    const total = part2Questions.length;
+    const progressPct = ((index) / total * 100).toFixed(1);
+    const sidA = 'p2-' + index + '-a';
+    const sidB = 'p2-' + index + '-b';
+
+    const html = '' +
+      '<div class="progress-bar"><div class="progress-bar-fill" style="width:' + progressPct + '%"></div></div>' +
+      '<div class="screen-label">Question ' + (index + 1) + ' of ' + total + '</div>' +
+      '<div class="question-prompt">' + q.prompt + '</div>' +
+      buildSliderHTML(sidA, q.labelA, true) +
+      buildSliderHTML(sidB, q.labelB, true) +
+      '<div class="toggle-group" id="toggle-group-' + index + '">' +
+        '<button class="toggle-btn" data-value="real" id="tog-real-' + index + '">Real difference</button>' +
+        '<button class="toggle-btn" data-value="noise" id="tog-noise-' + index + '">Just noise</button>' +
+      '</div>' +
+      '<div class="verdict-banner" id="verdict-' + index + '">' +
+        '<div class="verdict-header">' +
+          '<div class="verdict-icon" id="verdict-icon-' + index + '"></div>' +
+          '<div class="verdict-call-result" id="verdict-result-' + index + '"></div>' +
+        '</div>' +
+        '<div class="verdict-pvalue" id="verdict-pval-' + index + '"></div>' +
+        '<div class="verdict-copy" id="verdict-copy-' + index + '"></div>' +
+      '</div>' +
+      '<button class="btn-primary" id="btn-check-p2-' + index + '" disabled>Check answer</button>' +
+      '<button class="btn-primary btn-next" id="btn-next-p2-' + index + '">Next <span style="font-size:1.1em">→</span></button>';
+    showScreen(html);
+    bindSlider(sidA);
+    bindSlider(sidB);
+
+    let selectedCall = null;
+    const checkBtn = document.getElementById('btn-check-p2-' + index);
+    const togReal = document.getElementById('tog-real-' + index);
+    const togNoise = document.getElementById('tog-noise-' + index);
+
+    function selectToggle(val) {
+      selectedCall = val;
+      togReal.classList.toggle('selected', val === 'real');
+      togNoise.classList.toggle('selected', val === 'noise');
+      checkBtn.disabled = false;
+    }
+    togReal.addEventListener('click', () => selectToggle('real'));
+    togNoise.addEventListener('click', () => selectToggle('noise'));
+
+    checkBtn.addEventListener('click', function() {
+      this.style.display = 'none';
+      togReal.disabled = true;
+      togNoise.disabled = true;
+
+      revealSlider(sidA, q.answerA, null);
+      revealSlider(sidB, q.answerB, null);
+
+      // Hide reveal blocks for Type C (we use verdict instead)
+      const revA = document.getElementById('reveal-' + sidA);
+      const revB = document.getElementById('reveal-' + sidB);
+      if (revA) revA.style.display = 'none';
+      if (revB) revB.style.display = 'none';
+
+      const isCorrect = selectedCall === q.correctCall;
+      const verdictIcon = document.getElementById('verdict-icon-' + index);
+      const verdictResult = document.getElementById('verdict-result-' + index);
+      const verdictPval = document.getElementById('verdict-pval-' + index);
+      const verdictCopy = document.getElementById('verdict-copy-' + index);
+      const verdictBanner = document.getElementById('verdict-' + index);
+
+      if (isCorrect) {
+        verdictIcon.classList.add('correct');
+        verdictIcon.innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5L5.5 11L12 3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        verdictResult.classList.add('correct');
+        verdictResult.textContent = 'You called it correctly';
+      } else {
+        verdictIcon.classList.add('wrong');
+        verdictIcon.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>';
+        verdictResult.classList.add('wrong');
+        verdictResult.textContent = 'Not quite — here\'s why';
+      }
+      verdictPval.textContent = 'p = ' + q.pValue;
+      verdictCopy.textContent = q.verdict;
+
+      setTimeout(() => {
+        verdictBanner.classList.add('visible');
+      }, 700);
+
+      setTimeout(() => {
+        document.getElementById('btn-next-p2-' + index).classList.add('visible');
+      }, 1100);
+    });
+
+    document.getElementById('btn-next-p2-' + index).addEventListener('click', () => showPart2Question(index + 1));
+
+    setTimeout(() => {
+      const fill = currentScreenEl.querySelector('.progress-bar-fill');
+      if (fill) fill.style.width = ((index + 1) / total * 100).toFixed(1) + '%';
+    }, 50);
+  }
+
+  // --- FINAL ---
+  function showFinal() {
+    const html = '' +
+      '<p class="final-text">That\'s the full picture — 406 people, one Ramadan, a lot of carbs.</p>' +
+      '<p class="final-text">If there\'s one takeaway: the things people actually struggle with — hydration, Suhoor, vegetables — aren\'t about age or gender. They\'re shared across the board.</p>' +
+      '<div class="final-divider"></div>' +
+      '<p class="final-text">Thanks for playing. Maybe drink some water.</p>';
+    showScreen(html);
+  }
+
+  // ===== START =====
+  showIntro();
+
+})();
+</script>
+</body>
+</html>
